@@ -1,0 +1,4 @@
+data/*
+.env
+re.sh
+logs/*

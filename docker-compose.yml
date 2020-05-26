@@ -1,0 +1,88 @@
+version: '2'
+
+volumes:
+    db:
+        driver: local
+
+services:
+    php:
+        build: ./${PHP_VERSION}
+        container_name: php_portal 
+        volumes_from:
+            - source
+        ports:
+            - '${INTERFACE}:9000:9000'
+        links:
+            - db
+        networks:
+            - net-portal
+        restart: always
+
+    web-server:
+        build: ./nginx
+        container_name: www_portal
+        depends_on:
+            - source
+        volumes_from:
+            - source
+        ports:
+            - '${INTERFACE}:80:80'
+            - '${INTERFACE}:443:443'
+        links:
+            - php
+        networks:
+            - net-portal
+        restart: always
+
+    db:
+        build: ./mysql
+        container_name: db_portal
+        volumes_from:
+            - source
+        ports:
+            - '${INTERFACE}:3306:3306'
+        environment:
+            MYSQL_DATABASE: ${MYSQL_DATABASE}
+            MYSQL_USER: ${MYSQL_USER}
+            MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+            MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+        command: --disable-partition-engine-check
+        networks:
+            - net-portal
+        restart: always 
+
+    memcached:
+        image: memcached:1.5-alpine
+        container_name: memcached
+        volumes_from:
+            - source
+        ports:
+            - '${INTERFACE}:11211:11211'
+        networks:
+            - net-portal
+        restart: always
+
+    source:
+        image: alpine:latest
+        container_name: src_portal
+        volumes:
+            - ./data/ext_www:/home/bitrix/ext_www
+            - ./data/www:/home/bitrix/www
+
+            - db:/var/lib/mysql
+
+            - ./logs/db:/var/log/mysql
+            - ./logs/php:/var/log/php
+            - ./logs/nginx:/var/log/nginx
+
+            - /etc/localtime:/etc/localtime/:ro
+        networks:
+            - net-portal
+
+networks:
+    net-portal:
+        driver: bridge
+        ipam:
+            driver: default
+            config:
+                - subnet: 10.100.0.0/24
