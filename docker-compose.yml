@@ -5,7 +5,7 @@ volumes:
         driver: local
 
 services:
-    php:
+    php-portal:
         build: ./${PHP_VERSION}
         container_name: php_portal 
         volumes_from:
@@ -18,9 +18,9 @@ services:
             - net-portal
         restart: always
 
-    web-server:
-        build: ./nginx
-        container_name: www_portal
+    nginx-portal:
+        build: ./nginx_to_httpd
+        container_name: nginx_to_httpd_portal
         depends_on:
             - source
         volumes_from:
@@ -29,7 +29,22 @@ services:
             - '${INTERFACE}:80:80'
             - '${INTERFACE}:443:443'
         links:
-            - php
+            - php-portal
+        networks:
+            - net-portal
+        restart: always
+
+    httpd-portal:
+        build: ./httpd
+        container_name: httpd_portal 
+        depends_on:
+            - source
+        volumes_from:
+            - source
+        ports:
+            - '${INTERFACE}:8888:8888'
+        links:
+            - php-portal
         networks:
             - net-portal
         restart: always
@@ -74,6 +89,7 @@ services:
             - ./logs/db:/var/log/mysql
             - ./logs/php:/var/log/php
             - ./logs/nginx:/var/log/nginx
+            - ./logs/httpd:/var/log/httpd
 
             - /etc/localtime:/etc/localtime/:ro
         networks:

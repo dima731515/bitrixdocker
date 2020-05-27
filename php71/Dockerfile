@@ -15,6 +15,7 @@ RUN apt-get update \
     php7.1-mcrypt \
     php7.1-opcache \
     php7.1-zip \
+    php7.1-tidy \
     && apt-get clean; rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/share/doc/*
 
 RUN usermod -u 1000 www-data
